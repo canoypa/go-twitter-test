@@ -20,7 +20,6 @@ func RootCmd() *cobra.Command {
 		Args: cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			text := strings.Join(args, " ")
-			fmt.Println(text)
 			tweet(text)
 		},
 	}
