@@ -1,68 +1,65 @@
 package commands
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/canoypa/go-twitter-test/commands/auth"
-	"github.com/canoypa/go-twitter-test/core"
+	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
-	"github.com/g8rswimmer/go-twitter/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 func RootCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use: "tw",
 		Run: func(cmd *cobra.Command, args []string) {
-
 		},
 	}
 
-	cmd.AddCommand(auth.AuthCmd())
+	rootCmd.AddCommand(auth.AuthCmd())
+	rootCmd.AddCommand(InitCmd())
 
-	return cmd
-}
-
-type authorize struct {
-}
-
-func (a authorize) Add(req *http.Request) {
+	return rootCmd
 }
 
 func twitterTest(text string) {
+	consumerKey := viper.GetString("consumer_key")
+	consumerSecret := viper.GetString("consumer_secret")
 	accessToken := viper.GetString("token")
 	accessSecret := viper.GetString("secret")
 
+	config := oauth1.NewConfig(consumerKey, consumerSecret)
 	token := oauth1.NewToken(accessToken, accessSecret)
-	httpClient := core.OauthConfig().Client(oauth1.NoContext, token)
+	httpClient := config.Client(oauth1.NoContext, token)
 
-	client := &twitter.Client{
-		Authorizer: authorize{},
-		Client:     httpClient,
-		Host:       "https://api.twitter.com",
-	}
+	client := twitter.NewClient(httpClient)
 
-	request := twitter.CreateTweetRequest{
-		Text: text,
-	}
+	tweet, _, err := client.Statuses.Update(text, nil)
+	cobra.CheckErr(err)
 
-	client.CreateTweet(context.Background(), request)
+	fmt.Println(tweet)
 }
 
 func init() {
+	cobra.OnInitialize(initializeConfig)
+}
+
+func initializeConfig() {
+	homePath, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+
+	configPath := filepath.Join(homePath, ".twcli")
 	configName := "hosts"
 	configType := "yaml"
-	configPath := core.GetConfigPath()
 
+	viper.AddConfigPath(configPath)
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
-	viper.AddConfigPath(configPath)
 
+	// if config not found
 	if err := viper.ReadInConfig(); err != nil {
 		os.MkdirAll(configPath, 0700)
 		viper.WriteConfigAs(filepath.Join(configPath, fmt.Sprintf("%s.%s", configName, configType)))

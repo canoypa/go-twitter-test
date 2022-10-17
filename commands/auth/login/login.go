@@ -2,11 +2,10 @@ package login
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/canoypa/go-twitter-test/core"
 	"github.com/canoypa/go-twitter-test/utils"
 	"github.com/dghubble/oauth1"
+	"github.com/dghubble/oauth1/twitter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -15,27 +14,32 @@ func LoginCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "login",
 		Run: func(cmd *cobra.Command, args []string) {
-			token := getAccessToken()
+			token, secret := getAccessToken()
 
-			viper.Set("token", token.Token)
-			viper.Set("secret", token.TokenSecret)
+			viper.Set("token", token)
+			viper.Set("secret", secret)
 			viper.WriteConfig()
 
-			fmt.Println("Successfully logged in.")
+			fmt.Println("Successfully signed in.")
 		},
 	}
 
 	return cmd
 }
 
-func getAccessToken() *oauth1.Token {
-	oauthConfig := core.OauthConfig()
+func getAccessToken() (string, string) {
+	consumerKey := viper.GetString("consumerKey")
+	consumerSecret := viper.GetString("consumerSecret")
+
+	oauthConfig := &oauth1.Config{
+		ConsumerKey:    consumerKey,
+		ConsumerSecret: consumerSecret,
+		CallbackURL:    "oob",
+		Endpoint:       twitter.AuthenticateEndpoint,
+	}
 
 	requestToken, requestSecret, err := oauthConfig.RequestToken()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	cobra.CheckErr(err)
 
 	authUrl, err := oauthConfig.AuthorizationURL(requestToken)
 
@@ -43,17 +47,10 @@ func getAccessToken() *oauth1.Token {
 	fmt.Println(authUrl)
 	utils.OpenUrl(authUrl.String())
 
-	var pin string
-	fmt.Print("Enter PIN: ")
-	fmt.Scanln(&pin)
+	pin := utils.Input("Enter PIN")
 
 	accessToken, accessSecret, err := oauthConfig.AccessToken(requestToken, requestSecret, pin)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	cobra.CheckErr(err)
 
-	token := oauth1.NewToken(accessToken, accessSecret)
-
-	return token
+	return accessToken, accessSecret
 }
