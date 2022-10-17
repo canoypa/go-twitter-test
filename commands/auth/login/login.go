@@ -28,8 +28,8 @@ func LoginCmd() *cobra.Command {
 }
 
 func getAccessToken() (string, string) {
-	consumerKey := viper.GetString("consumerKey")
-	consumerSecret := viper.GetString("consumerSecret")
+	consumerKey := viper.GetString("consumer_key")
+	consumerSecret := viper.GetString("consumer_secret")
 
 	oauthConfig := &oauth1.Config{
 		ConsumerKey:    consumerKey,
