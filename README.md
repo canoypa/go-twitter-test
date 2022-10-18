@@ -1,13 +1,13 @@
 ## Usage
 
 ```shell
-$ tw init
+$ tw --init
 ConsumerKey:
 ConsumerSecret:
 
-$ tw auth status
-$ tw auth login
-$ tw auth logout
+$ tw --auth-status
+$ tw --login
+$ tw --logout
 
 $ tw Hello World
 
