@@ -6,6 +6,7 @@ import (
 	"github.com/canoypa/go-twitter-test/utils"
 	"github.com/dghubble/oauth1"
 	"github.com/dghubble/oauth1/twitter"
+	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -45,7 +46,9 @@ func getAccessToken() (string, string) {
 
 	fmt.Println("Visit this URL to get a PIN.")
 	fmt.Println(authUrl)
-	utils.OpenUrl(authUrl.String())
+
+	openErr := browser.OpenURL(authUrl.String())
+	cobra.CheckErr(openErr)
 
 	pin := utils.Input("Enter PIN")
 
